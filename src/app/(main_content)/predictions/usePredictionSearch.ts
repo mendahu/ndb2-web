@@ -1,83 +1,38 @@
 import { APIBets } from "@/types/bets";
-import {
-  APIPredictions,
-  PredictionLifeCycle,
-  SearchOptions,
-  SortByOption,
-} from "@/types/predictions";
+import { Entities, Endpoints } from "@offnominal/ndb2-api-types/v2";
+import { APIPredictions } from "@/types/predictions";
 import { responseHandler } from "@/utils/misc";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 const findStatus = (
-  status: PredictionLifeCycle,
-  statuses: PredictionLifeCycle[]
+  status: Entities.Predictions.PredictionLifeCycle,
+  statuses: Entities.Predictions.PredictionLifeCycle[],
 ): boolean => {
   return statuses.find((s) => s === status) !== undefined;
 };
 
-const allStatuses = (statuses: PredictionLifeCycle[]): boolean => {
+const allStatuses = (
+  statuses: Entities.Predictions.PredictionLifeCycle[],
+): boolean => {
   return statuses.length === 5 || statuses.length === 0;
 };
 
 const search = (
-  options: SearchOptions
-): Promise<APIPredictions.ShortEnhancedPrediction[]> => {
-  const params = new URLSearchParams();
-
-  if (options.page) {
-    params.append("page", options.page.toString());
-  }
-
-  if (options.statuses) {
-    for (const status of options.statuses) {
-      params.append("status", status);
-    }
-  }
-
-  if (options.non_better_id) {
-    params.append("unbetter", options.non_better_id);
-  }
-
-  if (options.predictor_id) {
-    params.append("creator", options.predictor_id);
-  }
-
-  if (options.keyword) {
-    params.append("keyword", options.keyword);
-  }
-
-  if (options.sort_by) {
-    params.append("sort_by", options.sort_by);
-  }
-
-  if (options.predictor_id) {
-    params.append("creator", options.predictor_id);
-  }
-
-  if (options.non_better_id) {
-    params.append("unbetter", options.non_better_id);
-  }
-
-  if (options.page) {
-    params.append("page", options.page.toString());
-  }
-
-  if (options.season_id) {
-    params.append("season_id", options.season_id);
-  }
-
+  options: Endpoints.Predictions.GET_Search.Query,
+): Promise<Endpoints.Predictions.GET_Search.Data> => {
+  const params = Endpoints.Predictions.GET_Search.toURLSearchParams(options);
   return fetch("/api/predictions/search?" + params.toString()).then(
-    responseHandler
+    responseHandler,
   );
 };
 
 export const usePredictionSearch = (
   discordId: string,
-  bets: APIBets.UserBet[]
+  bets: APIBets.UserBet[],
 ) => {
   const [predictions, setPredictions] = useState<
-    APIPredictions.ShortEnhancedPrediction[]
+    Entities.Predictions.PredictionSearchResult[]
   >([]);
 
   const [userBets, setUserBets] = useState<APIBets.UserBet[]>(bets);
@@ -101,7 +56,7 @@ export const usePredictionSearch = (
           // update user bets state
           const newBets = [...userBets];
           const existingBetIndex = userBets.findIndex(
-            (b) => b.prediction_id === predictionId
+            (b) => b.prediction_id === predictionId,
           );
           if (existingBetIndex >= 0) {
             const updatedBet = { ...newBets[existingBetIndex], endorsed };
@@ -109,7 +64,7 @@ export const usePredictionSearch = (
             setUserBets(newBets);
           } else {
             const newBet = prediction.bets.find(
-              (b) => b.better.discord_id === discordId
+              (b) => b.better.discord_id === discordId,
             );
             if (newBet) {
               setUserBets([
@@ -121,18 +76,19 @@ export const usePredictionSearch = (
 
           // update prediction state
           const existingPredictionIndex = predictions.findIndex(
-            (p) => p.id === predictionId
+            (p) => p.id === predictionId,
           );
           if (existingPredictionIndex >= 0) {
             const newPredictions = [...predictions];
+            const existingPrediction = newPredictions[existingPredictionIndex];
             newPredictions[existingPredictionIndex] = {
-              ...prediction,
+              ...existingPrediction,
               bets: {
                 endorsements: prediction.bets.filter(
-                  (b) => b.endorsed && b.valid
+                  (b) => b.endorsed && b.valid,
                 ).length,
                 undorsements: prediction.bets.filter(
-                  (b) => !b.endorsed && b.valid
+                  (b) => !b.endorsed && b.valid,
                 ).length,
                 invalid: prediction.bets.filter((b) => !b.valid).length,
               },
@@ -145,7 +101,7 @@ export const usePredictionSearch = (
           }
         });
     },
-    [discordId, userBets, predictions]
+    [discordId, userBets, predictions],
   );
 
   // loading states
@@ -159,9 +115,13 @@ export const usePredictionSearch = (
   const initialParams = {
     predictorId: searchParams.get("creator") || undefined,
     keyword: searchParams.get("keyword") || "",
-    statuses: searchParams.getAll("status") as PredictionLifeCycle[],
+    statuses: searchParams.getAll(
+      "status",
+    ) as Entities.Predictions.PredictionLifeCycle[],
     sort_by:
-      (searchParams.get("sort_by") as SortByOption) || SortByOption.DUE_ASC,
+      (searchParams.get(
+        "sort_by",
+      ) as Endpoints.Predictions.GET_Search.SortByOption) || "due_date-asc",
     season_id: searchParams.get("season_id") || undefined,
     showBetOpportunities: searchParams.get("unbetter") !== null,
   };
@@ -169,18 +129,21 @@ export const usePredictionSearch = (
   // Search Params States
   const [page, setPage] = useState(1);
   const [predictor_id, setPredictorId] = useState<string | undefined>(
-    initialParams.predictorId
+    initialParams.predictorId,
   );
   const [keyword, setKeyword] = useState(initialParams.keyword);
-  const [statuses, setStatuses] = useState<PredictionLifeCycle[]>(
-    initialParams.statuses
-  );
-  const [sort_by, setSortBy] = useState<SortByOption>(initialParams.sort_by);
+  const [statuses, setStatuses] = useState<
+    Entities.Predictions.PredictionLifeCycle[]
+  >(initialParams.statuses);
+  const [sort_by, setSortBy] =
+    useState<Endpoints.Predictions.GET_Search.SortByOption>(
+      initialParams.sort_by,
+    );
   const [season_id, setSeasonId] = useState<string | undefined>(
-    initialParams.season_id
+    initialParams.season_id,
   );
   const [showBetOpportunities, setShowBetOpportunities] = useState(
-    initialParams.showBetOpportunities
+    initialParams.showBetOpportunities,
   );
 
   const timeout = useRef<ReturnType<typeof setTimeout> | undefined>();
@@ -201,8 +164,8 @@ export const usePredictionSearch = (
     for (const status of statuses) {
       params.append("status", status);
 
-      if (status === PredictionLifeCycle.OPEN) {
-        params.append("status", PredictionLifeCycle.CHECKING);
+      if (status === "open") {
+        params.append("status", "checking");
       }
     }
 
@@ -247,7 +210,7 @@ export const usePredictionSearch = (
   }, [reachedEndOfList]);
 
   const handleSearch = useCallback(
-    (options: SearchOptions) => {
+    (options: Endpoints.Predictions.GET_Search.Query) => {
       setSearching(true);
       search(options)
         .then((preds) => {
@@ -267,18 +230,18 @@ export const usePredictionSearch = (
           setSearching(false);
         });
     },
-    [page]
+    [page],
   );
 
   useEffect(() => {
-    const options: SearchOptions = {
-      keyword,
+    const options: Endpoints.Predictions.GET_Search.Query = {
+      keyword: keyword || undefined,
       page,
-      statuses,
+      status: statuses.length ? statuses : undefined,
       sort_by,
-      predictor_id,
-      season_id,
-      non_better_id: showBetOpportunities ? discordId : undefined,
+      creator: predictor_id || undefined,
+      season_id: season_id ? Number(season_id) : undefined,
+      unbetter: showBetOpportunities ? discordId : undefined,
     };
 
     if (reachedEndOfList) {
@@ -309,8 +272,11 @@ export const usePredictionSearch = (
   ]);
 
   const setStatus = useCallback(
-    (newStatus: PredictionLifeCycle | "all", value: boolean) => {
-      const newStatuses: PredictionLifeCycle[] = [];
+    (
+      newStatus: Entities.Predictions.PredictionLifeCycle | "all",
+      value: boolean,
+    ) => {
+      const newStatuses: Entities.Predictions.PredictionLifeCycle[] = [];
 
       if (newStatus === "all") {
         return setStatuses(newStatuses);
@@ -338,7 +304,7 @@ export const usePredictionSearch = (
 
       setStatuses(newStatuses);
     },
-    [statuses]
+    [statuses],
   );
 
   const resetPages = useCallback(() => {
@@ -349,7 +315,7 @@ export const usePredictionSearch = (
   const clearFilters = useCallback(() => {
     setKeyword("");
     setStatus("all", true);
-    setSortBy(SortByOption.DUE_ASC);
+    setSortBy("due_date-asc");
     setPredictorId("");
     setShowBetOpportunities(false);
     setSeasonId(undefined);
@@ -367,30 +333,12 @@ export const usePredictionSearch = (
     incrementallySearching,
     statuses: {
       all: allStatuses(statuses),
-      [PredictionLifeCycle.OPEN]: findStatus(
-        PredictionLifeCycle.OPEN,
-        statuses
-      ),
-      [PredictionLifeCycle.CHECKING]: findStatus(
-        PredictionLifeCycle.CHECKING,
-        statuses
-      ),
-      [PredictionLifeCycle.CLOSED]: findStatus(
-        PredictionLifeCycle.CLOSED,
-        statuses
-      ),
-      [PredictionLifeCycle.RETIRED]: findStatus(
-        PredictionLifeCycle.RETIRED,
-        statuses
-      ),
-      [PredictionLifeCycle.SUCCESSFUL]: findStatus(
-        PredictionLifeCycle.SUCCESSFUL,
-        statuses
-      ),
-      [PredictionLifeCycle.FAILED]: findStatus(
-        PredictionLifeCycle.FAILED,
-        statuses
-      ),
+      open: findStatus("open", statuses),
+      checking: findStatus("checking", statuses),
+      closed: findStatus("closed", statuses),
+      retired: findStatus("retired", statuses),
+      successful: findStatus("successful", statuses),
+      failed: findStatus("failed", statuses),
     },
     showBetOpportunities,
     setShowBetOpportunities: (value: boolean) => {
@@ -400,12 +348,15 @@ export const usePredictionSearch = (
       setShowBetOpportunities(value);
       resetPages();
     },
-    setStatus: (newStatus: PredictionLifeCycle | "all", value: boolean) => {
+    setStatus: (
+      newStatus: Entities.Predictions.PredictionLifeCycle | "all",
+      value: boolean,
+    ) => {
       setStatus(newStatus, value);
       resetPages();
     },
     sort_by,
-    setSortBy: (newSortBy: SortByOption) => {
+    setSortBy: (newSortBy: Endpoints.Predictions.GET_Search.SortByOption) => {
       setSortBy(newSortBy);
       resetPages();
     },

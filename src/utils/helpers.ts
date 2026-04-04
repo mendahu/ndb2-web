@@ -1,8 +1,4 @@
-import {
-  APIPredictions,
-  PredictionDriver,
-  PredictionLifeCycle,
-} from "@/types/predictions";
+import { Entities } from "@offnominal/ndb2-api-types/v2";
 import { format } from "date-fns";
 
 export const truncateText = (text: string, maxLength: number) => {
@@ -13,7 +9,7 @@ export const truncateText = (text: string, maxLength: number) => {
   return text.substring(0, maxLength - 3) + "...";
 };
 
-type TimelineItem = {
+export type TimelineItemType = {
   label: string;
   value: string;
   status:
@@ -24,75 +20,84 @@ type TimelineItem = {
     | "cancelled";
 };
 
-interface BuildTimeLinePropsBase {
-  status: PredictionLifeCycle;
+interface BuildTimelinePropsBase {
   created_date: string;
+  status: Entities.Predictions.PredictionLifeCycle;
   retired_date: string | null;
   triggered_date: string | null;
   judged_date: string | null;
   closed_date: string | null;
 }
 
-export interface EventDrivenTimelineProps extends BuildTimeLinePropsBase {
-  driver: PredictionDriver.EVENT;
+export interface EventDrivenTimelineProps extends BuildTimelinePropsBase {
+  driver: Extract<Entities.Predictions.PredictionDriver, "event">;
   check_date: string;
+  due_date: null;
 }
 
-export interface DateDrivenTimelineProps extends BuildTimeLinePropsBase {
-  driver: PredictionDriver.DATE;
+export interface DateDrivenTimelineProps extends BuildTimelinePropsBase {
+  driver: Extract<Entities.Predictions.PredictionDriver, "date">;
   due_date: string;
+  check_date: null;
 }
 
-export const buildTimeline = (
-  prediction: DateDrivenTimelineProps | EventDrivenTimelineProps
-): [TimelineItem, TimelineItem, TimelineItem, TimelineItem] => {
+export const buildTimeline = ({
+  created_date,
+  status,
+  driver,
+  check_date,
+  due_date,
+  retired_date,
+  triggered_date,
+  judged_date,
+  closed_date,
+}: EventDrivenTimelineProps | DateDrivenTimelineProps): [
+  TimelineItemType,
+  TimelineItemType,
+  TimelineItemType,
+  TimelineItemType,
+] => {
   const dateFormat = "MMM do, yyyy";
 
-  const createdDate = new Date(prediction.created_date);
+  const createdDate = new Date(created_date);
 
-  const item1: TimelineItem = {
+  const item1: TimelineItemType = {
     label: "Created",
     value: format(createdDate, dateFormat),
     status: "complete",
   };
 
-  let item2: TimelineItem = {
+  let item2: TimelineItemType = {
     label: "",
     value: "",
     status: "not_started",
   };
 
-  if (
-    prediction.status === PredictionLifeCycle.OPEN ||
-    prediction.status === PredictionLifeCycle.CHECKING
-  ) {
-    if (prediction.driver === PredictionDriver.EVENT) {
-      const checkDate = new Date(prediction.check_date);
+  if (status === "open" || status === "checking") {
+    if (driver === "event") {
+      const checkDate = new Date(check_date);
       item2 = {
         label: "Will Check",
         value: format(checkDate, dateFormat),
         status: "in_progress",
       };
-    } else if (prediction.driver === PredictionDriver.DATE) {
-      const dueDate = new Date(prediction.due_date);
+    } else if (driver === "date") {
+      const dueDate = new Date(due_date);
       item2 = {
         label: "Due",
         value: format(dueDate, dateFormat),
         status: "in_progress",
       };
     }
-  } else if (
-    prediction.status === PredictionLifeCycle.RETIRED &&
-    prediction.retired_date
-  ) {
-    const retiredDate = new Date(prediction.retired_date);
+  } else if (status === "retired" && retired_date) {
+    const retiredDate = new Date(retired_date);
     item2 = {
       label: "Retired",
       value: format(retiredDate, dateFormat),
       status: "complete_negative",
     };
-  } else if (prediction.triggered_date) {
-    const triggeredDate = new Date(prediction.triggered_date);
+  } else if (triggered_date) {
+    const triggeredDate = new Date(triggered_date);
     item2 = {
       label: "Triggered",
       value: triggeredDate ? format(triggeredDate, dateFormat) : "",
@@ -100,39 +105,36 @@ export const buildTimeline = (
     };
   }
 
-  let item3: TimelineItem = {
+  let item3: TimelineItemType = {
     label: "",
     value: "",
     status: "not_started",
   };
 
-  if (
-    prediction.status === PredictionLifeCycle.OPEN ||
-    prediction.status === PredictionLifeCycle.CHECKING
-  ) {
+  if (status === "open" || status === "checking") {
     item3 = {
       label: "Close",
       value: "",
       status: "not_started",
     };
-  } else if (prediction.status === PredictionLifeCycle.RETIRED) {
-    if (prediction.driver === PredictionDriver.EVENT) {
-      const checkDate = new Date(prediction.check_date);
+  } else if (status === "retired") {
+    if (driver === "event") {
+      const checkDate = new Date(check_date);
       item3 = {
         label: "Check",
         value: format(checkDate, dateFormat),
         status: "cancelled",
       };
     } else {
-      const dueDate = new Date(prediction.due_date);
+      const dueDate = new Date(due_date);
       item3 = {
         label: "Due",
         value: format(dueDate, dateFormat),
         status: "cancelled",
       };
     }
-  } else if (prediction.closed_date) {
-    const closedDate = new Date(prediction.closed_date);
+  } else if (closed_date) {
+    const closedDate = new Date(closed_date);
     item3 = {
       label: "Eff. Close",
       value: closedDate ? format(closedDate, dateFormat) : "",
@@ -140,37 +142,34 @@ export const buildTimeline = (
     };
   }
 
-  let item4: TimelineItem = {
+  let item4: TimelineItemType = {
     label: "",
     value: "",
     status: "not_started",
   };
 
-  if (
-    prediction.status === PredictionLifeCycle.OPEN ||
-    prediction.status === PredictionLifeCycle.CHECKING
-  ) {
+  if (status === "open" || status === "checking") {
     item4 = {
       label: "Judgement",
       value: "",
       status: "not_started",
     };
-  } else if (prediction.status === PredictionLifeCycle.RETIRED) {
+  } else if (status === "retired") {
     item4 = {
       label: "Judgement",
       value: "",
       status: "cancelled",
     };
-  } else if (prediction.judged_date) {
-    const judgedDate = new Date(prediction.judged_date);
+  } else if (judged_date) {
+    const judgedDate = new Date(judged_date);
 
-    if (prediction.status === PredictionLifeCycle.FAILED) {
+    if (status === "failed") {
       item4 = {
         label: "Judgement",
         value: judgedDate ? format(judgedDate, dateFormat) : "",
         status: "complete_negative",
       };
-    } else if (prediction.status === PredictionLifeCycle.SUCCESSFUL) {
+    } else if (status === "successful") {
       item4 = {
         label: "Judged",
         value: judgedDate ? format(judgedDate, dateFormat) : "",
@@ -198,7 +197,7 @@ export const getURLSearchParams = (searchParams: {
 
 export const generateURIComponent = (
   path: string,
-  queryString: string
+  queryString: string,
 ): string => {
   const uriComponent = path + (queryString ? "?" + queryString : "");
   return encodeURIComponent(uriComponent);

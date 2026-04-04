@@ -1,14 +1,17 @@
 import { NextResponse } from "next/server";
 import authAPI from "@/utils/auth";
-import {
-  PredictionLifeCycle,
-  SearchOptions,
-  SortByOption,
-  isPredictionLifeCycle,
-  isSortByOption,
-} from "@/types/predictions";
+import { isSortByOption } from "@/types/predictions";
+import { Entities, Endpoints } from "@offnominal/ndb2-api-types/v2";
 import ndb2API from "@/utils/ndb2";
 import { cookies } from "next/headers";
+
+const isPredictionLifeCycle = (
+  val: unknown
+): val is Entities.Predictions.PredictionLifeCycle =>
+  typeof val === "string" &&
+  (Entities.Predictions.PREDICTION_LIFECYCLE_VALUES as readonly string[]).includes(
+    val
+  );
 
 export async function GET(req: Request) {
   const token = cookies().get("token");
@@ -43,7 +46,7 @@ export async function GET(req: Request) {
     );
   }
 
-  let statuses: PredictionLifeCycle[] | undefined;
+  let statuses: Entities.Predictions.PredictionLifeCycle[] | undefined;
 
   if (statusesStrings.length > 0) {
     statuses = [];
@@ -60,7 +63,7 @@ export async function GET(req: Request) {
     }
   }
 
-  let sort_by: SortByOption | undefined;
+  let sort_by: Endpoints.Predictions.GET_Search.SortByOption | undefined;
 
   if (sort_byString) {
     if (isSortByOption(sort_byString)) {
@@ -73,18 +76,16 @@ export async function GET(req: Request) {
     }
   }
 
-  const options: SearchOptions = {
-    keyword: keyword || undefined,
-    page: page || undefined,
-    statuses,
-    sort_by,
-    predictor_id: creator || undefined,
-    non_better_id: unbetter || undefined,
-    season_id: season_id || undefined,
-  };
-
   return ndb2API
-    .searchPredictions(options)
+    .searchPredictions({
+      keyword: keyword || undefined,
+      page: page || undefined,
+      status: statuses?.length ? statuses : undefined,
+      sort_by,
+      creator: creator || undefined,
+      unbetter: unbetter || undefined,
+      season_id: season_id ? Number(season_id) : undefined,
+    })
     .then((data) => NextResponse.json(data.data))
     .catch((err) => {
       console.error(err);

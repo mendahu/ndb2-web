@@ -1,10 +1,6 @@
 import { useToast } from "@/app/contexts/toast";
 import { RiskPill } from "@/components/RiskPill";
-import {
-  APIPredictions,
-  PredictionDriver,
-  PredictionLifeCycle,
-} from "@/types/predictions";
+import { APIPredictions } from "@/types/predictions";
 import { add, format, isAfter } from "date-fns";
 import { BetInterface } from "./BetInterface";
 import { APIBets } from "@/types/bets";
@@ -13,12 +9,14 @@ import { Button } from "@/components/Button";
 import { Timeline } from "@/components/Timeline";
 import { ReactNode } from "react";
 import { statusLabel } from "./helpers";
+import { Entities } from "@offnominal/ndb2-api-types/v2";
+import { buildTimeline } from "@/utils/helpers";
 
 type PredictionListItemProps = {
   updateUserBet: (predictionId: number, endorsed: boolean) => Promise<void>;
   text: ReactNode[];
   userBet: APIBets.UserBet | undefined;
-  prediction: APIPredictions.ShortEnhancedPrediction;
+  prediction: Entities.Predictions.PredictionSearchResult;
   loading: boolean;
   discordId: string;
 };
@@ -29,15 +27,15 @@ export const PredictionListItem = (props: PredictionListItemProps) => {
   let statusBackground = "bg-moonstone-blue";
   let showVotes = false;
 
-  if (props.prediction.status === PredictionLifeCycle.RETIRED) {
+  if (props.prediction.status === "retired") {
     statusBackground = "bg-silver-chalice-grey";
-  } else if (props.prediction.status === PredictionLifeCycle.CLOSED) {
+  } else if (props.prediction.status === "closed") {
     statusBackground = "bg-california-gold";
     showVotes = true;
-  } else if (props.prediction.status === PredictionLifeCycle.SUCCESSFUL) {
+  } else if (props.prediction.status === "successful") {
     statusBackground = "bg-moss-green";
     showVotes = true;
-  } else if (props.prediction.status === PredictionLifeCycle.FAILED) {
+  } else if (props.prediction.status === "failed") {
     statusBackground = "bg-deep-chestnut-red";
     showVotes = true;
   }
@@ -79,15 +77,15 @@ export const PredictionListItem = (props: PredictionListItemProps) => {
   let betMessage;
 
   if (
-    props.prediction.status !== PredictionLifeCycle.OPEN &&
-    props.prediction.status !== PredictionLifeCycle.CHECKING
+    props.prediction.status !== "open" &&
+    props.prediction.status !== "checking"
   ) {
     betMessage = "Predictions must be in OPEN status for bets to be made.";
   }
 
   const showDueCheckDate =
-    props.prediction.status === PredictionLifeCycle.OPEN ||
-    props.prediction.status === PredictionLifeCycle.CHECKING;
+    props.prediction.status === "open" ||
+    props.prediction.status === "checking";
 
   return (
     <article
@@ -115,7 +113,7 @@ export const PredictionListItem = (props: PredictionListItemProps) => {
             {showDueCheckDate && (
               <div className="mt-3 rounded-md border-slate-700 bg-slate-300 px-2 py-1 dark:border-slate-200 dark:bg-slate-500">
                 <p className="w-full text-center text-sm">
-                  {props.prediction.driver === PredictionDriver.DATE && (
+                  {props.prediction.driver === "date" && (
                     <>
                       Due:
                       <br />{" "}
@@ -125,7 +123,7 @@ export const PredictionListItem = (props: PredictionListItemProps) => {
                       )}
                     </>
                   )}
-                  {props.prediction.driver === PredictionDriver.EVENT && (
+                  {props.prediction.driver === "event" && (
                     <>
                       Check:
                       <br />{" "}
@@ -158,7 +156,7 @@ export const PredictionListItem = (props: PredictionListItemProps) => {
         <div className="mb-4 mt-8 flex gap-4">
           <div className=" grow-0 basis-12"></div>
           <div className="flex grow flex-col gap-8 md:flex-row md:items-start">
-            <Timeline prediction={props.prediction} />
+            <Timeline items={buildTimeline(props.prediction)} />
             <div
               className={
                 "grid grow basis-1/2 grid-cols-[auto,2rem,auto] gap-4 " +

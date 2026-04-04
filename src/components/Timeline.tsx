@@ -1,25 +1,22 @@
 import {
-  buildTimeline,
-  DateDrivenTimelineProps,
-  EventDrivenTimelineProps,
+  TimelineItemType,
 } from "@/utils/helpers";
 import { TimelineItem } from "./TimelineItem";
 
-type TimelineProps = {
-  prediction: DateDrivenTimelineProps | EventDrivenTimelineProps;
+interface TimelineProps {
+  items: [TimelineItemType, TimelineItemType, TimelineItemType, TimelineItemType];
 };
 
 export const Timeline = (props: TimelineProps) => {
-  const timelineItemArray = buildTimeline(props.prediction);
 
-  const builtTimeline = timelineItemArray.map((item, i) => {
+  const builtTimeline = props.items.map((item, i) => {
     return (
       <TimelineItem
         status={item.status}
         label={item.label}
         value={item.value}
         key={i}
-        addStem={i !== timelineItemArray.length - 1}
+        addStem={i !== props.items.length - 1}
       />
     );
   });

@@ -4,7 +4,8 @@ import authAPI from "@/utils/auth";
 import ndb2API from "@/utils/ndb2";
 import discordAPI, { GuildMemberManager } from "@/utils/discord";
 import { ShortDiscordGuildMember } from "@/types/discord";
-import { APIPredictions, PredictionLifeCycle } from "@/types/predictions";
+import { APIPredictions } from "@/types/predictions";
+import { Endpoints, Entities } from "@offnominal/ndb2-api-types/v2";
 import { APIBets } from "@/types/bets";
 import { Avatar } from "@/components/Avatar";
 import { hydrateTextWithMemberHandles } from "../hydrateTextWithMemberHandles";
@@ -14,7 +15,6 @@ import { Card } from "@/components/Card";
 import { List } from "@/components/List";
 import { Empty } from "@/components/Empty";
 import { VoteListItem } from "./VoteListItem";
-import { APISeasons } from "@/types/seasons";
 import { cookies } from "next/headers";
 import { generateURIComponent, getURLSearchParams } from "@/utils/helpers";
 import { PageProps } from "@/types/base";
@@ -22,14 +22,14 @@ import { statusLabel } from "../helpers";
 
 const defaultAvatarUrl = "https://cdn.discordapp.com/embed/avatars/0.png";
 
-export type ListBet = Omit<APIBets.Bet, "better"> & {
+export type ListBet = Omit<Entities.Predictions.Prediction["bets"][number], "better"> & {
   name: string;
   avatarUrl: string;
   better_discordId: string;
 };
 
 const generateBet = (
-  bet: APIBets.Bet,
+  bet: Entities.Predictions.Prediction["bets"][number],
   member: ShortDiscordGuildMember
 ): ListBet => {
   return {
@@ -46,14 +46,14 @@ const generateBet = (
   };
 };
 
-export type ListVote = Omit<APIPredictions.Vote, "voter"> & {
+export type ListVote = Omit<Entities.Predictions.Prediction["votes"][number], "voter"> & {
   name: string;
   avatarUrl: string;
   voter_discordId: string;
 };
 
 const generateVote = (
-  vote: APIPredictions.Vote,
+  vote: Entities.Predictions.Prediction["votes"][number],
   member: ShortDiscordGuildMember | undefined
 ): ListVote => {
   return {
@@ -74,13 +74,13 @@ async function baseFetch(id: number) {
   const headers: RequestInit["headers"] = { cache: "no-store" };
   const guildMemberManager = new discordAPI.GuildMemberManager();
 
-  const promises: [Promise<void>, Promise<APIPredictions.GetPredictionById>] = [
+  const promises: [Promise<void>, Promise<Endpoints.Predictions.GET_ById.Response>] = [
     guildMemberManager.initialize(),
     ndb2API.getPredictionById(id, headers),
   ];
 
-  const results = await Promise.all(promises);
-  const prediction = results[1].data;
+  const [_, results] = await Promise.all(promises);
+  const prediction = results.data;
   return { prediction, guildMemberManager };
 }
 
@@ -89,6 +89,13 @@ export async function generateMetadata(
 ): Promise<Metadata> {
   const id = parseInt(props.params.id);
   const { prediction, guildMemberManager } = await baseFetch(id);
+
+  if (!prediction) {
+    return {
+      title: "Prediction Not Found",
+      description: "The prediction you are looking for does not exist.",
+    };
+  }
 
   const member = await guildMemberManager.getMemberByDiscordId(
     prediction.predictor.discord_id
@@ -116,23 +123,30 @@ export async function generateMetadata(
 }
 
 async function fetchData(id: number): Promise<{
-  prediction: APIPredictions.EnhancedPrediction;
+  prediction: Entities.Predictions.Prediction;
   predictor: ShortDiscordGuildMember;
   bets: ListBet[];
   votes: ListVote[];
-  season: APISeasons.Season | undefined;
+  season: Entities.Seasons.Season | undefined;
   members: ShortDiscordGuildMember[];
 }> {
-  let prediction: APIPredictions.EnhancedPrediction;
+  let prediction: Entities.Predictions.Prediction;
   let guildMemberManager: GuildMemberManager;
-  let season: APISeasons.Season | undefined;
+  let season: Entities.Seasons.Season | undefined;
 
   try {
     const baseData = await baseFetch(id);
-    const response = await ndb2API.getSeasons();
+    if (!baseData.prediction) {
+      throw new Error("Prediction not found");
+    }
+    const results = await ndb2API.getSeasons();
+    if (!results.success) {
+      throw new Error("Failed to fetch seasons");
+    }
+    const seasons = results.data;
     prediction = baseData.prediction;
     guildMemberManager = baseData.guildMemberManager;
-    season = response.data.find((s) => s.id === prediction.season_id);
+    season = seasons.find((s) => s.id === prediction.season_id);
   } catch (err) {
     console.error(err);
     throw new Error("Failed to fetch prediction data");
@@ -163,7 +177,7 @@ async function fetchData(id: number): Promise<{
     };
   } catch (err) {
     console.error(err);
-    throw new Error("Failed to fetch user infor");
+    throw new Error("Failed to fetch user information");
   }
 }
 
@@ -186,13 +200,16 @@ export default async function Predictions(props: PredictionsPageProps) {
   const { prediction, predictor, votes, bets, season, members } =
     await fetchData(id);
 
-  const statusColor = {
-    [PredictionLifeCycle.RETIRED]: "bg-silver-chalice-grey",
-    [PredictionLifeCycle.SUCCESSFUL]: "bg-moss-green",
-    [PredictionLifeCycle.FAILED]: "bg-deep-chestnut-red",
-    [PredictionLifeCycle.OPEN]: "bg-moonstone-blue",
-    [PredictionLifeCycle.CHECKING]: "bg-moonstone-blue",
-    [PredictionLifeCycle.CLOSED]: "bg-silver-chalice-grey",
+  const statusColor: Record<
+    Entities.Predictions.PredictionLifeCycle,
+    string
+  > = {
+    retired: "bg-silver-chalice-grey",
+    successful: "bg-moss-green",
+    failed: "bg-deep-chestnut-red",
+    open: "bg-moonstone-blue",
+    checking: "bg-moonstone-blue",
+    closed: "bg-silver-chalice-grey",
   };
 
   const yesVotes = votes.filter((vote) => vote.vote);

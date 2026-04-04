@@ -1,10 +1,8 @@
 "use client";
 
-import {
-  PredictionLifeCycle,
-  SortByOption,
-  isSortByOption,
-} from "@/types/predictions";
+import { isSortByOption } from "@/types/predictions";
+import { Entities, Endpoints } from "@offnominal/ndb2-api-types/v2";
+
 import { usePredictionSearch } from "./usePredictionSearch";
 import { CheckboxButtonList } from "@/components/CheckboxButtonList";
 import { PredictionListItem } from "./PredictionListItem";
@@ -16,59 +14,58 @@ import { ReactNode, useState } from "react";
 import { Button } from "@/components/Button";
 import { useElementIntersect } from "../../../hooks/useElementIntersect";
 import { APIBets } from "@/types/bets";
-import { APISeasons } from "@/types/seasons";
 import { format } from "date-fns";
 import { ScrollToTop } from "../../../components/ScrollToTop";
 import { hydrateTextWithMemberHandles } from "./hydrateTextWithMemberHandles";
 
-const sortByOptions = [
+const sortByOptions: { label: string; value: Endpoints.Predictions.GET_Search.SortByOption }[] = [
   {
     label: "Created Date, Most Recent first",
-    value: SortByOption.CREATED_DESC,
+    value: "created_date-desc",
   },
   {
     label: "Created Date, Oldest first",
-    value: SortByOption.CREATED_ASC,
+    value: "created_date-asc",
   },
   {
     label: "Due Date, Soonest first",
-    value: SortByOption.DUE_ASC,
+    value: "due_date-asc",
   },
   {
     label: "Due Date, Furthest first",
-    value: SortByOption.DUE_DESC,
+    value: "due_date-desc",
   },
   {
     label: "Retired Date, Most Recent first",
-    value: SortByOption.RETIRED_DESC,
+    value: "retired_date-desc",
   },
   {
     label: "Retired Date, Oldest first",
-    value: SortByOption.RETIRED_ASC,
+    value: "retired_date-asc",
   },
   {
     label: "Triggered Date, Most Recent first",
-    value: SortByOption.TRIGGERED_DESC,
+    value: "triggered_date-desc",
   },
   {
     label: "Triggered Date, Oldest first",
-    value: SortByOption.TRIGGERED_ASC,
+    value: "triggered_date-asc",
   },
   {
     label: "Closed Date, Most Recent first",
-    value: SortByOption.CLOSED_DESC,
+    value: "closed_date-desc",
   },
   {
     label: "Closed Date, Oldest first",
-    value: SortByOption.CLOSED_ASC,
+    value: "closed_date-asc",
   },
   {
     label: "Judged Date, Most Recent first",
-    value: SortByOption.JUDGED_DESC,
+    value: "judged_date-desc",
   },
   {
     label: "Judged Date, Oldest first",
-    value: SortByOption.JUDGED_ASC,
+    value: "judged_date-asc",
   },
 ];
 
@@ -76,7 +73,7 @@ export type SearchPredictionsProps = {
   discordId: string;
   bets: APIBets.UserBet[];
   members: ShortDiscordGuildMember[];
-  seasons: APISeasons.EnhancedSeason[];
+  seasons: Entities.Seasons.Season[];
 };
 
 export const SearchPredictions = (props: SearchPredictionsProps) => {
@@ -111,7 +108,7 @@ export const SearchPredictions = (props: SearchPredictionsProps) => {
 
   const handleStatusChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, checked } = event.target;
-    setStatus(name as PredictionLifeCycle, checked);
+    setStatus(name as Entities.Predictions.PredictionLifeCycle, checked);
   };
 
   const handleSortBySelect = (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -153,7 +150,7 @@ export const SearchPredictions = (props: SearchPredictionsProps) => {
           </h4>
           <div className="mt-4 flex justify-center">
             <div className="w-full">
-              <CheckboxButtonList<PredictionLifeCycle | "all">
+              <CheckboxButtonList<Entities.Predictions.PredictionLifeCycle | "all">
                 onChange={handleStatusChange}
                 items={[
                   {
@@ -164,37 +161,31 @@ export const SearchPredictions = (props: SearchPredictionsProps) => {
                   },
                   {
                     name: "open",
-                    value: PredictionLifeCycle.OPEN,
+                    value: "open",
                     label: "Open",
                     checked: statuses.open,
                   },
-                  // {
-                  //   name: "checking",
-                  //   value: PredictionLifeCycle.CHECKING,
-                  //   label: "Checking",
-                  //   checked: statuses.checking,
-                  // },
                   {
                     name: "closed",
-                    value: PredictionLifeCycle.CLOSED,
+                    value: "closed",
                     label: "Voting",
                     checked: statuses.closed,
                   },
                   {
                     name: "retired",
-                    value: PredictionLifeCycle.RETIRED,
+                    value: "retired",
                     label: "Retired",
                     checked: statuses.retired,
                   },
                   {
                     name: "successful",
-                    value: PredictionLifeCycle.SUCCESSFUL,
+                    value: "successful",
                     label: "Successful",
                     checked: statuses.successful,
                   },
                   {
                     name: "failed",
-                    value: PredictionLifeCycle.FAILED,
+                    value: "failed",
                     label: "Failed",
                     checked: statuses.failed,
                   },
@@ -344,7 +335,7 @@ export const SearchPredictions = (props: SearchPredictionsProps) => {
               <div className="mt-4">
                 <CheckboxButtonList<string>
                   onChange={(event) => {
-                    setStatus(PredictionLifeCycle.OPEN, true);
+                    setStatus("open", true);
                     setShowBetOpportunities(event.target.checked);
                   }}
                   items={[

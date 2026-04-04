@@ -1,62 +1,13 @@
-import { APIResponse } from "./api";
+import { Entities, Endpoints } from "@offnominal/ndb2-api-types/v2";
 import { APIBets } from "./bets";
 
-export enum PredictionDriver {
-  EVENT = "event",
-  DATE = "date",
-}
-
-export enum PredictionLifeCycle {
-  OPEN = "open",
-  RETIRED = "retired",
-  CLOSED = "closed",
-  SUCCESSFUL = "successful",
-  FAILED = "failed",
-  CHECKING = "checking",
-}
-
-export const isPredictionLifeCycle = (val: any): val is PredictionLifeCycle => {
-  if (typeof val !== "string") {
-    return false;
-  }
-
-  return Object.values(PredictionLifeCycle).includes(
-    val as PredictionLifeCycle
+export const isSortByOption = (
+  val: unknown,
+): val is Endpoints.Predictions.GET_Search.SortByOption =>
+  typeof val === "string" &&
+  Endpoints.Predictions.GET_Search.SORT_BY_VALUES.includes(
+    val as Endpoints.Predictions.GET_Search.SortByOption,
   );
-};
-
-export enum SortByOption {
-  CREATED_ASC = "created_date-asc",
-  CREATED_DESC = "created_date-desc",
-  DUE_ASC = "due_date-asc",
-  DUE_DESC = "due_date-desc",
-  RETIRED_ASC = "retired_date-asc",
-  RETIRED_DESC = "retired_date-desc",
-  TRIGGERED_ASC = "triggered_date-asc",
-  TRIGGERED_DESC = "triggered_date-desc",
-  CLOSED_ASC = "closed_date-asc",
-  CLOSED_DESC = "closed_date-desc",
-  JUDGED_ASC = "judged_date-asc",
-  JUDGED_DESC = "judged_date-desc",
-}
-
-export const isSortByOption = (val: any): val is SortByOption => {
-  if (typeof val !== "string") {
-    return false;
-  }
-
-  return Object.values(SortByOption).includes(val as SortByOption);
-};
-
-export type SearchOptions = {
-  keyword?: string;
-  page?: number;
-  statuses?: PredictionLifeCycle[];
-  sort_by?: SortByOption;
-  predictor_id?: string;
-  non_better_id?: string;
-  season_id?: string;
-};
 
 export namespace APIPredictions {
   export type Vote = {
@@ -70,12 +21,12 @@ export namespace APIPredictions {
   };
 
   type EventDrivenPrediction = {
-    driver: PredictionDriver.EVENT;
+    driver: "event";
     check_date: string;
   };
 
   type DateDrivenPrediction = {
-    driver: PredictionDriver.DATE;
+    driver: "date";
     due_date: string;
   };
 
@@ -96,7 +47,7 @@ export namespace APIPredictions {
     } | null;
     judged_date: string | null;
     retired_date: string | null;
-    status: PredictionLifeCycle;
+    status: Entities.Predictions.PredictionLifeCycle;
     bets: APIBets.Bet[];
     votes: Vote[];
     payouts: {
@@ -108,27 +59,4 @@ export namespace APIPredictions {
   export type EnhancedPrediction =
     | (EventDrivenPrediction & EnhancedPredictionBase)
     | (DateDrivenPrediction & EnhancedPredictionBase);
-
-  export type ShortEnhancedPredictionBase = Omit<
-    EnhancedPredictionBase,
-    "bets" | "votes"
-  > & {
-    bets: {
-      endorsements: number;
-      undorsements: number;
-      invalid: number;
-    };
-    votes: {
-      yes: number;
-      no: number;
-    };
-  };
-
-  export type ShortEnhancedPrediction =
-    | (ShortEnhancedPredictionBase & EventDrivenPrediction)
-    | (ShortEnhancedPredictionBase & DateDrivenPrediction);
-
-  export type GetPredictionById = APIResponse<EnhancedPrediction>;
-
-  export type SearchPredictions = APIResponse<ShortEnhancedPrediction>;
 }

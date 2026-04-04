@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { ListBet } from "./page";
-import { APIPredictions } from "@/types/predictions";
 import { AppJWTPayload } from "@/utils/auth";
+import { Entities } from "@offnominal/ndb2-api-types/v2";
 
 export const useBets = (
   initialBets: ListBet[],
   payoutRatio: { endorse: number; undorse: number },
-  user: AppJWTPayload
+  user: AppJWTPayload,
 ) => {
   const [bets, setBets] = useState(initialBets);
   const [payoutRatios, setPayoutRatios] = useState<{
@@ -30,9 +30,9 @@ export const useBets = (
           }
         });
       })
-      .then((prediction: APIPredictions.EnhancedPrediction) => {
+      .then((prediction: Entities.Predictions.Prediction) => {
         const updatedBet = prediction.bets.find(
-          (b) => b.better.discord_id === user.discordId
+          (b) => b.better.discord_id === user.discordId,
         );
         if (!updatedBet) {
           throw new Error("Bet not found");

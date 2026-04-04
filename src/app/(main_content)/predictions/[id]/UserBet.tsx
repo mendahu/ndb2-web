@@ -1,7 +1,7 @@
 import { format, differenceInDays, isAfter, add } from "date-fns";
 import { BetInterface } from "../BetInterface";
 import { PillDisplay } from "@/components/PillDisplay";
-import { PredictionLifeCycle } from "@/types/predictions";
+import { Entities } from "@offnominal/ndb2-api-types/v2";
 
 type UserBetProps = {
   userBet:
@@ -12,7 +12,7 @@ type UserBetProps = {
       }
     | undefined;
   handleBet: (endorsed: boolean) => void;
-  status: PredictionLifeCycle;
+  status: Entities.Predictions.PredictionLifeCycle;
   payoutRatio: number;
   calcDate: string;
 };
@@ -24,7 +24,7 @@ const UserBet = (props: UserBetProps) => {
 
   let betMessage: string | undefined;
 
-  if (props.status !== PredictionLifeCycle.OPEN) {
+  if (props.status !== "open") {
     betMessage = "Predictions must be in OPEN status for bets to be made.";
   }
 
@@ -34,7 +34,7 @@ const UserBet = (props: UserBetProps) => {
   let showbetEndorsed = false;
   let showPoints = false;
 
-  if (props.status === PredictionLifeCycle.OPEN) {
+  if (props.status === "open") {
     if (props.userBet) {
       const locked = isAfter(
         new Date(),
@@ -57,7 +57,7 @@ const UserBet = (props: UserBetProps) => {
   } else if (props.userBet) {
     showBetInfo = true;
     showbetEndorsed = true;
-    if (props.status !== PredictionLifeCycle.RETIRED) {
+    if (props.status !== "retired") {
       showPoints = true;
     }
   }

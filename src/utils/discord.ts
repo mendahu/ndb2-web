@@ -27,17 +27,17 @@ const handleDiscordError = (res: Response, body: any) => {
   if (!isDiscordAPIError(body)) {
     if (res.status) {
       return new Error(
-        `Received an error from the Discord API but it is not recognized:\n- HTTP: ${res.status}\n- Message: ${res.statusText}`
+        `Received an error from the Discord API but it is not recognized:\n- HTTP: ${res.status}\n- Message: ${res.statusText}`,
       );
     } else {
       return new Error(
-        "Something went wrong with the Discord API call, but we don't recognize the error."
+        "Something went wrong with the Discord API call, but we don't recognize the error.",
       );
     }
   }
 
   return new Error(
-    `Discord API Error:\n- HTTP: ${res.status}\n- Message: ${body.message}\n- Error Code: ${body.code}`
+    `Discord API Error:\n- HTTP: ${res.status}\n- Message: ${body.message}\n- Error Code: ${body.code}`,
   );
 };
 
@@ -57,9 +57,9 @@ const buildDiscordOAuthUrl = (options: {
   return `${options.baseUrl}/oauth2/authorize?response_type=code&client_id=${
     options.clientId
   }&scope=${encodeURIComponent(
-    options.scope.join(" ")
+    options.scope.join(" "),
   )}&redirect_uri=${encodeURIComponent(
-    options.redirectUri
+    options.redirectUri,
   )}&prompt=consent&state=${options.state}`;
 };
 
@@ -67,7 +67,7 @@ export const buildAvatarUrl = (
   userId: string,
   hash: string | null | undefined,
   fallbackHash: string | null,
-  discriminator: number
+  discriminator: number,
 ): string => {
   if (hash) {
     return `${envVars.DISCORD_CDN_BASE_URL}/guilds/${GUILD_ID}/users/${userId}/avatars/${hash}.png`;
@@ -95,7 +95,7 @@ const baseUrl = envVars.DISCORD_API_BASE_URL;
 const scope = ["identify", "guilds", "guilds.members.read"];
 
 const authenticate = (
-  code: string
+  code: string,
 ): Promise<{
   access_token: string;
   token_type: string;
@@ -119,7 +119,7 @@ const authenticate = (
 };
 
 const identify = (
-  access_token: string
+  access_token: string,
 ): Promise<RESTGetAPIGuildMemberResult> => {
   return fetch(`${baseUrl}/users/@me/guilds/${GUILD_ID}/member`, {
     headers: { Authorization: `Bearer ${access_token}` },
@@ -129,7 +129,7 @@ const identify = (
 };
 
 const authorize = (
-  member: APIGuildMember
+  member: APIGuildMember,
 ): {
   user: APIAuth.User | null;
   error: string | null;
@@ -148,7 +148,7 @@ const authorize = (
       member.user.id,
       member.avatar,
       member.user.avatar,
-      Number(member.user.discriminator)
+      Number(member.user.discriminator),
     ),
     discordId: member.user?.id,
   };
@@ -216,7 +216,7 @@ export class GuildMemberManager {
             member.user.id,
             member.avatar,
             member.user.avatar,
-            Number(member.user?.discriminator)
+            Number(member.user?.discriminator),
           ),
           discordId: member.user.id,
         };
@@ -229,7 +229,7 @@ export class GuildMemberManager {
   };
 
   public getMemberByDiscordId = (
-    discordId: string
+    discordId: string,
   ): Promise<ShortDiscordGuildMember> => {
     if (this.members[discordId]) {
       return Promise.resolve(this.members[discordId]);
@@ -241,7 +241,7 @@ export class GuildMemberManager {
             member.user.id,
             member.avatar,
             member.user.avatar,
-            Number(member.user.discriminator)
+            Number(member.user.discriminator),
           ),
           discordId: member.user.id,
         };
@@ -251,10 +251,10 @@ export class GuildMemberManager {
   };
 
   public buildUserLookup = (
-    discordIds: string[]
+    discordIds: string[],
   ): Promise<Record<string, ShortDiscordGuildMember>> => {
     const usersPromises = discordIds.map((discordId) =>
-      this.getMemberByDiscordId(discordId)
+      this.getMemberByDiscordId(discordId),
     );
     const userLookup: Record<string, ShortDiscordGuildMember> = {};
 
