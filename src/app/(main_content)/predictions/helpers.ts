@@ -1,10 +1,13 @@
-import { PredictionLifeCycle } from "@/types/predictions";
+import { Entities } from "@offnominal/ndb2-api-types/v2";
 
-export const statusLabel = {
-  [PredictionLifeCycle.OPEN]: "Open",
-  [PredictionLifeCycle.CLOSED]: "Closed",
-  [PredictionLifeCycle.RETIRED]: "Retired",
-  [PredictionLifeCycle.SUCCESSFUL]: "Success",
-  [PredictionLifeCycle.FAILED]: "Failed",
-  [PredictionLifeCycle.CHECKING]: "Open",
+export const statusLabel: Record<
+  Entities.Predictions.PredictionLifeCycle,
+  string
+> = {
+  open: "Open",
+  closed: "Closed",
+  retired: "Retired",
+  successful: "Success",
+  failed: "Failed",
+  checking: "Open",
 };

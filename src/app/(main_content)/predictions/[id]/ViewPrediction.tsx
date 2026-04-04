@@ -1,11 +1,6 @@
 "use client";
 
 import { Timeline } from "@/components/Timeline";
-import {
-  APIPredictions,
-  PredictionDriver,
-  PredictionLifeCycle,
-} from "@/types/predictions";
 import { BetListItem } from "./BetListItem";
 import { add, format, isAfter } from "date-fns";
 import { ListBet } from "./page";
@@ -13,18 +8,19 @@ import { Card } from "@/components/Card";
 import { List } from "@/components/List";
 import { Empty } from "@/components/Empty";
 import { useBets } from "./useBets";
-
+import { Entities } from "@offnominal/ndb2-api-types/v2";
 import { useToast } from "@/app/contexts/toast";
 import { AppJWTPayload } from "@/utils/auth";
 import { RiskPill } from "@/components/RiskPill";
 import UserBet from "./UserBet";
+import { buildTimeline } from "@/utils/helpers";
 
 const formatDate = (date: string) => {
   return format(new Date(date), "LLL do, yyyy");
 };
 
 export type ViewPredictionProps = {
-  prediction: APIPredictions.EnhancedPrediction;
+  prediction: Entities.Predictions.Prediction;
   bets: ListBet[];
   user: AppJWTPayload;
 };
@@ -111,13 +107,13 @@ export default function ViewPrediction(props: ViewPredictionProps) {
     <>
       <div className="mt-8 flex flex-col gap-8 md:flex-row md:justify-between">
         <div className="basis-1/2">
-          <Timeline prediction={props.prediction} />
+          <Timeline items={buildTimeline(props.prediction)} />
         </div>
         <div className="basis-1/2">
           <UserBet
             userBet={userBet}
             calcDate={
-              props.prediction.driver === PredictionDriver.DATE
+              props.prediction.driver === "date"
                 ? props.prediction.due_date
                 : props.prediction.check_date
             }

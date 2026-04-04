@@ -1,9 +1,9 @@
-import { APIPredictions, SearchOptions } from "@/types/predictions";
+import { Endpoints } from "@offnominal/ndb2-api-types/v2";
+import { APIPredictions } from "@/types/predictions";
 import { APIScores } from "@/types/scores";
 import { RequestInit } from "next/dist/server/web/spec-extension/request";
 import { responseHandler } from "./misc";
 import { APIUsers } from "@/types/users";
-import { APISeasons } from "@/types/seasons";
 import { APIBets } from "@/types/bets";
 
 const API_URL = process.env.NDB2_API_BASEURL;
@@ -72,7 +72,7 @@ const handleNDB2Error = (res: Response, body: any) => {
 
   if (!isNDB2Error(body) || !body.message) {
     return new Error(
-      `Unexpected response from server, HTTP Status ${res.status}.`
+      `Unexpected response from server, HTTP Status ${res.status}.`,
     );
   }
 
@@ -81,45 +81,50 @@ const handleNDB2Error = (res: Response, body: any) => {
       return new Error(`Authentication Error`);
     case NDB2APIErrorCode.BAD_REQUEST:
       return new Error(
-        `Bad Request, HTTP Status ${res.status}. Server Message: ${body.message}`
+        `Bad Request, HTTP Status ${res.status}. Server Message: ${body.message}`,
       );
     case NDB2APIErrorCode.MALFORMED_BODY_DATA:
       return new Error(
-        `Malformed Body Data, HTTP Status ${res.status}. Server Message: ${body.message}`
+        `Malformed Body Data, HTTP Status ${res.status}. Server Message: ${body.message}`,
       );
     case NDB2APIErrorCode.MALFORMED_QUERY_PARAMS:
       return new Error(
-        `Malformed Query Params, HTTP Status ${res.status}. Server Message: ${body.message}`
+        `Malformed Query Params, HTTP Status ${res.status}. Server Message: ${body.message}`,
       );
     case NDB2APIErrorCode.SERVER_ERROR:
       return new Error(
-        `Server Error, HTTP Status ${res.status}. Server Message: ${body.message}`
+        `Server Error, HTTP Status ${res.status}. Server Message: ${body.message}`,
       );
     case NDB2APIErrorCode.INVALID_PREDICTION_STATUS:
       return new Error(
-        `You can't perform this action on a prediction with this status.`
+        `You can't perform this action on a prediction with this status.`,
       );
     case NDB2APIErrorCode.BETS_NO_CHANGE:
       return new Error(`You've already made this same bet.`);
     case NDB2APIErrorCode.BETS_UNCHANGEABLE:
       return new Error(
-        `Bets cannot be changed once twelve hours have passed since the original bet.`
+        `Bets cannot be changed once twelve hours have passed since the original bet.`,
       );
     default:
       return new Error(
-        `Unexpected response from server, HTTP Status ${res.status}.`
+        `Unexpected response from server, HTTP Status ${res.status}.`,
       );
   }
 };
 
 const errorHandler = (res: Response) => {
+  if (!res.json) {
+    throw new Error(
+      `Unexpected response from server, HTTP Status ${res.status}.`,
+    );
+  }
   return res.json().then((body) => {
     throw handleNDB2Error(res, body);
   });
 };
 
 const getPointsLeaderboard = (
-  options?: GetLeaderboardOptions
+  options?: GetLeaderboardOptions,
 ): Promise<APIScores.GetPointsLeaderboard> => {
   let url: string = baseUrl + "/api/scores";
   if (options?.seasonIdentifier) {
@@ -137,7 +142,7 @@ const getPointsLeaderboard = (
 };
 
 const getBetsLeaderboard = (
-  options?: GetLeaderboardOptions
+  options?: GetLeaderboardOptions,
 ): Promise<APIScores.GetBetsLeaderboard> => {
   let url: string = baseUrl + "/api/scores";
   if (options?.seasonIdentifier) {
@@ -155,7 +160,7 @@ const getBetsLeaderboard = (
 };
 
 const getPredictionsLeaderboard = (
-  options?: GetLeaderboardOptions
+  options?: GetLeaderboardOptions,
 ): Promise<APIScores.GetPredictionsLeaderboard> => {
   let url: string = baseUrl + "/api/scores";
   if (options?.seasonIdentifier) {
@@ -174,48 +179,22 @@ const getPredictionsLeaderboard = (
 
 const getPredictionById = (
   id: number,
-  options?: RequestInit
-): Promise<APIPredictions.GetPredictionById> => {
-  return fetch(baseUrl + `/api/predictions/${id}`, {
+  options?: RequestInit,
+): Promise<Endpoints.Predictions.GET_ById.Response> => {
+  return fetch(baseUrl + `/api/v2/predictions/${id}`, {
     headers,
     ...options,
-  }).then((res) => res.json());
+  })
+    .then((res) => res.json())
+    .catch(errorHandler);
 };
 
 const searchPredictions = (
-  options: SearchOptions
-): Promise<APIPredictions.SearchPredictions> => {
-  const url = new URL(`/api/predictions/search`, baseUrl);
-
-  if (options.statuses) {
-    for (const status of options.statuses) {
-      url.searchParams.append("status", status);
-    }
-  }
-
-  if (options.keyword) {
-    url.searchParams.append("keyword", options.keyword);
-  }
-
-  if (options.sort_by) {
-    url.searchParams.append("sort_by", options.sort_by);
-  }
-
-  if (options.predictor_id) {
-    url.searchParams.append("creator", options.predictor_id);
-  }
-
-  if (options.non_better_id) {
-    url.searchParams.append("unbetter", options.non_better_id);
-  }
-
-  if (options.page) {
-    url.searchParams.append("page", options.page.toString());
-  }
-
-  if (options.season_id) {
-    url.searchParams.append("season_id", options.season_id.toString());
-  }
+  options: Endpoints.Predictions.GET_Search.Query,
+): Promise<Endpoints.Predictions.GET_Search.Response> => {
+  const url = new URL(`/api/v2/predictions/search`, baseUrl);
+  url.search =
+    Endpoints.Predictions.GET_Search.toURLSearchParams(options).toString();
 
   return fetch(url, {
     headers,
@@ -225,7 +204,7 @@ const searchPredictions = (
 };
 
 const getUserBetsByDiscordId = (
-  discordId: string
+  discordId: string,
 ): Promise<APIUsers.GetUserBetsByDiscordId> => {
   return fetch(baseUrl + `/api/users/discord_id/${discordId}/bets`, {
     headers,
@@ -234,8 +213,8 @@ const getUserBetsByDiscordId = (
     .catch(errorHandler);
 };
 
-const getSeasons = (): Promise<APISeasons.GetSeasons> => {
-  return fetch(baseUrl + `/api/seasons`, {
+const getSeasons = (): Promise<Endpoints.Seasons.GET.Response> => {
+  return fetch(baseUrl + `/api/v2/seasons`, {
     headers,
   })
     .then(responseHandler)
@@ -245,7 +224,7 @@ const getSeasons = (): Promise<APISeasons.GetSeasons> => {
 const addBet = (
   predictionId: number,
   endorsed: boolean,
-  discord_id: string
+  discord_id: string,
 ): Promise<APIBets.AddBet> => {
   const body = {
     endorsed,
