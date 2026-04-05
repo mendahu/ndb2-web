@@ -13,10 +13,10 @@ import { Avatar } from "@/components/Avatar";
 import { ReactNode, useState } from "react";
 import { Button } from "@/components/Button";
 import { useElementIntersect } from "../../../hooks/useElementIntersect";
-import { APIBets } from "@/types/bets";
 import { format } from "date-fns";
 import { ScrollToTop } from "../../../components/ScrollToTop";
 import { hydrateTextWithMemberHandles } from "./hydrateTextWithMemberHandles";
+import { APIUsers } from "@/types/users";
 
 const sortByOptions: { label: string; value: Endpoints.Predictions.GET_Search.SortByOption }[] = [
   {
@@ -71,7 +71,7 @@ const sortByOptions: { label: string; value: Endpoints.Predictions.GET_Search.So
 
 export type SearchPredictionsProps = {
   discordId: string;
-  bets: APIBets.UserBet[];
+  bets: APIUsers.UserBet[];
   members: ShortDiscordGuildMember[];
   seasons: Entities.Seasons.Season[];
 };

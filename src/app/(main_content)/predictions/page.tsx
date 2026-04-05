@@ -4,12 +4,12 @@ import { redirect } from "next/navigation";
 import ndb2API from "@/utils/ndb2";
 import discordAPI from "@/utils/discord";
 import { ShortDiscordGuildMember } from "@/types/discord";
-import { APIBets } from "@/types/bets";
 import { Metadata } from "next";
 import { cookies } from "next/headers";
 import { generateURIComponent, getURLSearchParams } from "@/utils/helpers";
 import { PageProps } from "@/types/base";
 import { Entities } from "@offnominal/ndb2-api-types/v2";
+import { APIUsers } from "@/types/users";
 
 const title = "Nostradambot2 - Predictions";
 const description =
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
 const getPredictionSearchData = async (payload: AppJWTPayload) => {
   const data: {
     discordId: string;
-    bets: APIBets.UserBet[];
+    bets: APIUsers.UserBet[];
     members: ShortDiscordGuildMember[];
     seasons: Entities.Seasons.Season[];
   } = { discordId: payload.discordId, bets: [], members: [], seasons: [] };

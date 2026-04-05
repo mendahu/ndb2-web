@@ -1,6 +1,4 @@
-import { APIBets } from "@/types/bets";
 import { Entities, Endpoints } from "@offnominal/ndb2-api-types/v2";
-import { APIPredictions } from "@/types/predictions";
 import { responseHandler } from "@/utils/misc";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -27,15 +25,22 @@ const search = (
   );
 };
 
+interface UserBetState {
+  id: number | string;
+  endorsed: boolean;
+  prediction_id: number;
+  date: string;
+}
+
 export const usePredictionSearch = (
   discordId: string,
-  bets: APIBets.UserBet[],
+  bets: UserBetState[],
 ) => {
   const [predictions, setPredictions] = useState<
     Entities.Predictions.PredictionSearchResult[]
   >([]);
 
-  const [userBets, setUserBets] = useState<APIBets.UserBet[]>(bets);
+  const [userBets, setUserBets] = useState<UserBetState[]>(bets);
 
   const updateUserBet = useCallback(
     (predictionId: number, endorsed: boolean) => {
@@ -52,7 +57,7 @@ export const usePredictionSearch = (
             }
           });
         })
-        .then((prediction: APIPredictions.EnhancedPrediction) => {
+        .then((prediction: Entities.Predictions.Prediction) => {
           // update user bets state
           const newBets = [...userBets];
           const existingBetIndex = userBets.findIndex(

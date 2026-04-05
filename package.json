@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "autoprefixer": "10.4.20",
-    "@offnominal/ndb2-api-types": "0.9.1",
+    "@offnominal/ndb2-api-types": "0.10.0",
     "date-fns": "^3.6.0",
     "jose": "^4.14.4",
     "next": "14.2.8",

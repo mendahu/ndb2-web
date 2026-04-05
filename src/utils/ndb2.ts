@@ -1,10 +1,8 @@
 import { Endpoints } from "@offnominal/ndb2-api-types/v2";
-import { APIPredictions } from "@/types/predictions";
 import { APIScores } from "@/types/scores";
 import { RequestInit } from "next/dist/server/web/spec-extension/request";
 import { responseHandler } from "./misc";
 import { APIUsers } from "@/types/users";
-import { APIBets } from "@/types/bets";
 
 const API_URL = process.env.NDB2_API_BASEURL;
 const API_KEY = process.env.NDB2_API_KEY;
@@ -225,12 +223,12 @@ const addBet = (
   predictionId: number,
   endorsed: boolean,
   discord_id: string,
-): Promise<APIBets.AddBet> => {
+): Promise<Endpoints.Predictions.POST_ById_bets.Response> => {
   const body = {
     endorsed,
     discord_id,
   };
-  return fetch(baseUrl + `/api/predictions/${predictionId}/bets`, {
+  return fetch(baseUrl + `/api/v2/predictions/${predictionId}/bets`, {
     method: "POST",
     body: JSON.stringify(body),
     headers,
