@@ -1,6 +1,20 @@
 import { APIResponse } from "./api";
-import { APIBets } from "./bets";
 
 export namespace APIUsers {
-  export type GetUserBetsByDiscordId = APIResponse<APIBets.UserBet[]>;
+  export type UserBet = {
+    id: string;
+    endorsed: boolean;
+    date: string;
+    wager: number;
+    valid: boolean;
+    payout: number;
+    season_payout: number;
+    better: {
+      id: string;
+      discord_id: string;
+    };
+    prediction_id: number;
+  };
+
+  export type GetUserBetsByDiscordId = APIResponse<UserBet[]>;
 }

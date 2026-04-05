@@ -1,6 +1,4 @@
-import { APIBets } from "@/types/bets";
 import { Entities, Endpoints } from "@offnominal/ndb2-api-types/v2";
-import { APIPredictions } from "@/types/predictions";
 import { responseHandler } from "@/utils/misc";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -31,11 +29,12 @@ interface UserBetState {
   id: number | string;
   endorsed: boolean;
   prediction_id: number;
+  date: string;
 }
 
 export const usePredictionSearch = (
   discordId: string,
-  bets: APIBets.UserBet[],
+  bets: UserBetState[],
 ) => {
   const [predictions, setPredictions] = useState<
     Entities.Predictions.PredictionSearchResult[]

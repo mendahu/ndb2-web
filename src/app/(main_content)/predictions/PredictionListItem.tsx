@@ -2,7 +2,6 @@ import { useToast } from "@/app/contexts/toast";
 import { RiskPill } from "@/components/RiskPill";
 import { add, format, isAfter } from "date-fns";
 import { BetInterface } from "./BetInterface";
-import { APIBets } from "@/types/bets";
 import Link from "next/link";
 import { Button } from "@/components/Button";
 import { Timeline } from "@/components/Timeline";
@@ -11,10 +10,15 @@ import { statusLabel } from "./helpers";
 import { Entities } from "@offnominal/ndb2-api-types/v2";
 import { buildTimeline } from "@/utils/helpers";
 
+interface PredictionListItemUserBet {
+  endorsed: boolean;
+  date: string;
+}
+
 type PredictionListItemProps = {
   updateUserBet: (predictionId: number, endorsed: boolean) => Promise<void>;
   text: ReactNode[];
-  userBet: APIBets.UserBet | undefined;
+  userBet: PredictionListItemUserBet | undefined;
   prediction: Entities.Predictions.PredictionSearchResult;
   loading: boolean;
   discordId: string;
