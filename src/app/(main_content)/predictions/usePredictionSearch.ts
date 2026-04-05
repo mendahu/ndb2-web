@@ -27,6 +27,12 @@ const search = (
   );
 };
 
+interface UserBetState {
+  id: number | string;
+  endorsed: boolean;
+  prediction_id: number;
+}
+
 export const usePredictionSearch = (
   discordId: string,
   bets: APIBets.UserBet[],
@@ -35,7 +41,7 @@ export const usePredictionSearch = (
     Entities.Predictions.PredictionSearchResult[]
   >([]);
 
-  const [userBets, setUserBets] = useState<APIBets.UserBet[]>(bets);
+  const [userBets, setUserBets] = useState<UserBetState[]>(bets);
 
   const updateUserBet = useCallback(
     (predictionId: number, endorsed: boolean) => {
@@ -52,7 +58,7 @@ export const usePredictionSearch = (
             }
           });
         })
-        .then((prediction: APIPredictions.EnhancedPrediction) => {
+        .then((prediction: Entities.Predictions.Prediction) => {
           // update user bets state
           const newBets = [...userBets];
           const existingBetIndex = userBets.findIndex(

@@ -1,10 +1,8 @@
 import { Endpoints } from "@offnominal/ndb2-api-types/v2";
-import { APIPredictions } from "@/types/predictions";
 import { APIScores } from "@/types/scores";
 import { RequestInit } from "next/dist/server/web/spec-extension/request";
 import { responseHandler } from "./misc";
 import { APIUsers } from "@/types/users";
-import { APIBets } from "@/types/bets";
 
 const API_URL = process.env.NDB2_API_BASEURL;
 const API_KEY = process.env.NDB2_API_KEY;
