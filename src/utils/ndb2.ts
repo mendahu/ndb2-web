@@ -225,12 +225,12 @@ const addBet = (
   predictionId: number,
   endorsed: boolean,
   discord_id: string,
-): Promise<APIBets.AddBet> => {
+): Promise<Endpoints.Predictions.POST_ById_bets.Response> => {
   const body = {
     endorsed,
     discord_id,
   };
-  return fetch(baseUrl + `/api/predictions/${predictionId}/bets`, {
+  return fetch(baseUrl + `/api/v2/predictions/${predictionId}/bets`, {
     method: "POST",
     body: JSON.stringify(body),
     headers,
